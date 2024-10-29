@@ -185,7 +185,7 @@
     </visual>
   </link>
 
-  <!-- STEP 4 - Gazebo colors -->
+  <!-- STEP 4 - Gazebo frictions and colors -->
   <gazebo reference="left_wheel">
     <mu1>0.2</mu1>
     <mu2>0.2</mu2>
