@@ -18,7 +18,7 @@ def generate_launch_description():
 
     # Add your own gazebo library path here
     gazebo_models_path = "/home/david/gazebo_models"
-    os.environ["GZ_SIM_RESOURCE_PATH"] = gazebo_models_path
+    os.environ["GZ_SIM_RESOURCE_PATH"] += os.pathsep + gazebo_models_path
 
 
     gazebo_launch = IncludeLaunchDescription(
