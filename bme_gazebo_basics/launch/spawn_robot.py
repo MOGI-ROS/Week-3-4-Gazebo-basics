@@ -11,6 +11,8 @@ def generate_launch_description():
 
     pkg_bme_gazebo_basics = get_package_share_directory('bme_gazebo_basics')
 
+    gazebo_models_path, ignore_last_dir = os.path.split(pkg_bme_gazebo_basics)
+    os.environ["GZ_SIM_RESOURCE_PATH"] += os.pathsep + gazebo_models_path
 
     rviz_launch_arg = DeclareLaunchArgument(
         'rviz', default_value='true',
