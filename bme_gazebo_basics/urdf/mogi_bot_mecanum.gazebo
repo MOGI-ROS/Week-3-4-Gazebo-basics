@@ -31,6 +31,17 @@
 
     </plugin>
 
+    <plugin name="gz::sim::systems::OdometryPublisher" filename="gz-sim-odometry-publisher-system">
+      <odom_topic>odom</odom_topic>                 <!-- ROS 2 topic for odometry data -->
+      <odom_frame>odom</odom_frame>          <!-- Reference frame (fixed frame for odometry) -->
+      <robot_base_frame>base_footprint</robot_base_frame>           <!-- Moving frame (often the base of the robot) -->
+      <publish_tf>true</publish_tf>                  <!-- Whether to publish odom -> base_link TF -->
+      <tf_topic>tf</tf_topic>
+      <odom_publish_frequency>30</odom_publish_frequency>                  <!-- Frequency of odometry updates in Hz -->
+      <xyz_offset>0 0 0</xyz_offset>                 <!-- Position offset if needed -->
+      <rpy_offset>0 0 0</rpy_offset>                 <!-- Orientation offset if needed -->
+    </plugin>
+
     <plugin
         filename="gz-sim-joint-state-publisher-system"
         name="gz::sim::systems::JointStatePublisher">
