@@ -197,8 +197,7 @@
     </visual>
   </link>
 
-  <!-- STEP 4 - Gazebo colors -->
-
+  <!-- STEP 4 - Gazebo frictions -->
   <gazebo reference='front_left_wheel'>
     <collision>
       <surface>
@@ -253,34 +252,6 @@
         </friction>
       </surface>
     </collision>
-  </gazebo>
-
-  <gazebo reference="front_left_wheel1">
-    <mu1>1.0</mu1>
-    <mu2>0.0</mu2>
-    <fdir1>0 0 0</fdir1>
-    <!-- <material>Gazebo/Green</material> -->
-  </gazebo>
-
-  <gazebo reference="rear_left_wheel1">
-    <mu1>1.0</mu1>
-    <mu2>0.0</mu2>
-    <fdir1>0 0 0</fdir1>
-    <!-- <material>Gazebo/Green</material> -->
-  </gazebo>
-
-  <gazebo reference="front_right_wheel1">
-    <mu1>1.0</mu1>
-    <mu2>0.0</mu2>
-    <fdir1>0 0 0</fdir1>
-    <!-- <material>Gazebo/Green</material> -->
-  </gazebo>
-
-  <gazebo reference="rear_right_wheel1">
-    <mu1>1.0</mu1>
-    <mu2>0.0</mu2>
-    <fdir1>0 0 0</fdir1>
-    <!-- <material>Gazebo/Green</material> -->
   </gazebo>
 
   <gazebo reference="base_link">
