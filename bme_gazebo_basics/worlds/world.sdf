@@ -38,10 +38,10 @@
           </geometry>
           <surface>
             <friction>
-              <ode/>
+              <ode>
+                <mu>50</mu>
+              </ode>
             </friction>
-            <bounce/>
-            <contact/>
           </surface>
         </collision>
         <visual name='visual'>
@@ -87,7 +87,9 @@
           </geometry>
           <surface>
             <friction>
-              <ode/>
+              <ode>
+                <mu>50</mu>
+              </ode>
             </friction>
             <bounce/>
             <contact/>
