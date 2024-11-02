@@ -33,7 +33,7 @@
     <collision>
       <origin xyz="0 0 0" rpy=" 0 0 0"/> 
       <geometry>
-        <box size=".4 .05 .1"/>
+        <box size=".4 .2 .1"/>
       </geometry>
     </collision>
 
@@ -77,12 +77,12 @@
     </collision>
 
     <visual name='front_left_wheel_visual'>
-      <origin xyz="0 0 0" rpy="0 1.5707 1.5707"/>
+      <origin xyz="0 0 0" rpy="1.5707 0 0"/>
       <geometry>
-        <sphere radius=".1"/>
-        <!-- <mesh filename = "package://bme_gazebo_basics/meshes/wheel.dae"/> -->
+        <!-- <sphere radius=".1"/> -->
+        <mesh filename="package://bme_gazebo_basics/meshes/mecanum_wheel_left.STL" scale="0.002 .002 0.002"/>
       </geometry>
-      <!-- <material name="green"/> -->
+      <material name="green"/>
     </visual>
   </link>
 
@@ -114,12 +114,12 @@
     </collision>
 
     <visual name='rear_left_wheel_visual'>
-      <origin xyz="0 0 0" rpy="0 1.5707 1.5707"/>
+      <origin xyz="0 0 0" rpy="1.5707 0 0"/>
       <geometry>
-        <sphere radius=".1"/>
-        <!-- <mesh filename = "package://bme_gazebo_basics/meshes/wheel.dae"/> -->
+        <!-- <sphere radius=".1"/> -->
+        <mesh filename="package://bme_gazebo_basics/meshes/mecanum_wheel_right.STL" scale="0.002 .002 0.002"/>
       </geometry>
-      <!-- <material name="green"/> -->
+      <material name="green"/>
     </visual>
   </link>
 
@@ -151,12 +151,12 @@
     </collision>
 
     <visual name='front_right_wheel_visual'>
-      <origin xyz="0 0 0" rpy="0 1.5707 1.5707"/>
+      <origin xyz="0 0 0" rpy="1.5707 0 0"/>
       <geometry>
-        <sphere radius=".1"/>
-        <!-- <mesh filename = "package://bme_gazebo_basics/meshes/wheel.dae"/> -->
+        <!-- <sphere radius=".1"/> -->
+        <mesh filename="package://bme_gazebo_basics/meshes/mecanum_wheel_right.STL" scale="0.002 .002 0.002"/>
       </geometry>
-      <!-- <material name="green"/> -->
+      <material name="green"/>
     </visual>
   </link>
 
@@ -188,12 +188,12 @@
     </collision>
 
     <visual name='rear_right_wheel_visual'>
-      <origin xyz="0 0 0" rpy="0 1.5707 1.5707"/>
+      <origin xyz="0 0 0" rpy="1.5707 0 0"/>
       <geometry>
-        <sphere radius=".1"/>
-        <!-- <mesh filename = "package://bme_gazebo_basics/meshes/wheel.dae"/> -->
+        <!-- <sphere radius=".1"/> -->
+        <mesh filename="package://bme_gazebo_basics/meshes/mecanum_wheel_left.STL" scale="0.002 .002 0.002"/>
       </geometry>
-      <!-- <material name="green"/> -->
+      <material name="green"/>
     </visual>
   </link>
 
