@@ -69,7 +69,7 @@
       />
     </inertial>
 
-    <collision name='collision'>
+    <collision>
       <origin xyz="0 0 0" rpy="0 1.5707 1.5707"/> 
       <geometry>
         <cylinder radius=".1" length=".05"/>
@@ -106,7 +106,7 @@
       />
     </inertial>
 
-    <collision name='collision'>
+    <collision>
       <origin xyz="0 0 0" rpy="0 1.5707 1.5707"/> 
       <geometry>
         <cylinder radius=".1" length=".05"/>
@@ -143,7 +143,7 @@
       />
     </inertial>
 
-    <collision name='collision'>
+    <collision>
       <origin xyz="0 0 0" rpy="0 1.5707 1.5707"/> 
       <geometry>
         <cylinder radius=".1" length=".05"/>
@@ -180,7 +180,7 @@
       />
     </inertial>
 
-    <collision name='collision'>
+    <collision>
       <origin xyz="0 0 0" rpy="0 1.5707 1.5707"/> 
       <geometry>
         <cylinder radius=".1" length=".05"/>
