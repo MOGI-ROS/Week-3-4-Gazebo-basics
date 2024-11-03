@@ -65,7 +65,10 @@ def generate_launch_description():
             "-topic", "robot_description",
             "-x", "0.0", "-y", "0.0", "-z", "0.5", "-Y", "0.0"  # Initial spawn position
         ],
-        output="screen"
+        output="screen",
+        parameters=[
+            {'use_sim_time': True},
+        ]
     )
 
     # Node to bridge /cmd_vel and /odom
@@ -73,13 +76,16 @@ def generate_launch_description():
         package="ros_gz_bridge",
         executable="parameter_bridge",
         arguments=[
-            #"/clock@rosgraph_msgs/msg/Clock@gz.msgs.Clock",
+            "/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock",
             "/cmd_vel@geometry_msgs/msg/Twist@gz.msgs.Twist",
             "/odom@nav_msgs/msg/Odometry@gz.msgs.Odometry",
             "/joint_states@sensor_msgs/msg/JointState@gz.msgs.Model",
             "/tf@tf2_msgs/msg/TFMessage@gz.msgs.Pose_V"
         ],
-        output="screen"
+        output="screen",
+        parameters=[
+            {'use_sim_time': True},
+        ]
     )
 
     robot_state_publisher_node = Node(
@@ -88,7 +94,8 @@ def generate_launch_description():
         name='robot_state_publisher',
         output='screen',
         parameters=[
-            {'robot_description': Command(['xacro', ' ', urdf_file_path])},
+            {'robot_description': Command(['xacro', ' ', urdf_file_path]),
+             'use_sim_time': True},
         ],
         remappings=[
             ('/tf', 'tf'),
