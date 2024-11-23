@@ -6,6 +6,8 @@ gz models:
 https://app.gazebosim.org/
 
 
+Slow simulation with discrete graphics
+https://gazebosim.org/docs/harmonic/troubleshooting/#problems-with-dual-intel-and-nvidia-gpu-systems
 
 
 export GZ_SIM_RESOURCE_PATH=~/gazebo_models
@@ -53,3 +55,19 @@ https://gazebosim.org/api/sim/8/namespacegz_1_1sim_1_1systems.html
 https://gazebosim.org/api/sim/8/classgz_1_1sim_1_1systems_1_1DiffDrive.html
 https://gazebosim.org/api/sim/8/classgz_1_1sim_1_1systems_1_1MecanumDrive.html
 https://gazebosim.org/api/sim/8/classgz_1_1sim_1_1systems_1_1OdometryPublisher.html
+
+
+Strange error:
+pip3 install catkin_pkg
+
+
+sudo apt install ros-jazzy-urdf-launch
+
+
+
+Gazebo install:
+https://gazebosim.org/docs/harmonic/install_ubuntu/
+
+Gazebo ROS integration:
+https://gazebosim.org/docs/harmonic/ros_installation/
+sudo apt install ros-jazzy-ros-gz
