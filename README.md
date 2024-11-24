@@ -71,3 +71,8 @@ https://gazebosim.org/docs/harmonic/install_ubuntu/
 Gazebo ROS integration:
 https://gazebosim.org/docs/harmonic/ros_installation/
 sudo apt install ros-jazzy-ros-gz
+
+TF tree
+sudo apt install ros-jazzy-rqt-tf-tree 
+ros2 run rqt_tf_tree rqt_tf_tree
+ros2 run rqt_tf_tree rqt_tf_tree --force-discover
