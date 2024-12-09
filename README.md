@@ -3,25 +3,32 @@
 [image1]: ./assets/gazebo.png "Shapes.sdf"
 [image2]: ./assets/gazebo-1.png "Gazebo GUI"
 [image3]: ./assets/gazebo-2.png "Gazebo models"
+[image4]: ./assets/gazebo-3.png "Gazebo world"
+[image5]: ./assets/gazebo-4.png "Gazebo world"
+[image6]: ./assets/inertia.png "Robot inertia"
+[image7]: ./assets/rviz.png "RViz"
+[image8]: ./assets/rviz-1.png "RViz"
 
 # Week 3-4: Gazebo basics
 
 ## This is how far we will get by the end of this lesson: 
-  <a href="https://youtu.be/FuJuLnJy93g"><img width="400" src="./assets/youtube-gazebo.png"></a>  
+  <a href="https://youtu.be/FuJuLnJy93g"><img width="600" src="./assets/youtube-gazebo.png"></a>  
 
 
 # Table of Contents
 1. [What is Gazebo](#what-is-gazebo)
 2. [Install Gazebo](#install-gazebo)  
 2.1. [Run Gazebo examples](#run-gazebo-examples)  
-3. [Download ROS package](#basics-of-ros2)  
-4. [Creating a Gazebo world](#basics-of-ros2)  
-4.1. [Launch Gazebo world from ROS](#run-gazebo-examples)  
-5. [URDF](#basics-of-ros2)  
-5.1. [Building our robot](#run-gazebo-examples)  
-5.2. [View in RViz](#run-gazebo-examples)  
-5.3. [TF Tree](#run-gazebo-examples)  
-5.4. [Load URDF into Gazebo](#run-gazebo-examples)  
+3. [Download ROS package](#download-ros-package)  
+4. [Creating a Gazebo world](#creating-a-gazebo-world)  
+4.1. [Launch Gazebo world from ROS](#launch-gazebo-world-from-ros)  
+5. [URDF](#urdf)  
+5.1. [Building our robot 1](#building-our-robot-1)  
+5.2. [View the robot in RViz](#view-the-robot-in-rviz)  
+5.3. [Building our robot 2](#building-our-robot-2)  
+5.4. [TF Tree](#tf-tree)  
+5.5. [Add some colors](#add-some-colors)  
+5.6. [Load the URDF in Gazebo](#load-the-urdf-in-gazebo)  
 6. [Gazebo integration](#basics-of-ros2)  
 6.1. [Diff drive plugin](#run-gazebo-examples)  
 6.2. [ROS gz bridge](#run-gazebo-examples)  
@@ -128,19 +135,310 @@ After setting up the offline model library let's open the `empty.sdf` in Gazebo 
 ![alt text][image3]
 
 
+# Download ROS package
+
+From now, every lesson has a starter package that you can donwload from GitHub. To download the starter package clone the following git repo with the right branch (with the `-b branch` flag) to your colcon workspace:
+```bash
+git clone -b starter-branch https://github.com/MOGI-ROS/Week-3-4-Gazebo-basics.git
+```
+
+Let's see what's inside the `bme_gazebo_basics` package with the `tree` command!
+
+```bash
+.
+├── CMakeLists.txt
+├── package.xml
+├── meshes
+│   ├── mecanum_wheel_left.STL
+│   ├── mecanum_wheel_right.STL
+│   ├── mogi_bot.blend
+│   ├── mogi_bot.dae
+│   ├── mogi_bot.SLDPRT
+│   ├── mogi_bot.STEP
+│   ├── mogi_bot.STL
+│   ├── wheel.blend
+│   ├── wheel.dae
+│   ├── wheel.SLDPRT
+│   ├── wheel.STEP
+│   └── wheel.STL
+├── rviz
+│   ├── rviz.rviz
+│   └── urdf.rviz
+├── urdf
+│   └──materials.xacro
+└── worlds
+    ├── empty.sdf
+    └── world.sdf
+```
+
+There are a few folders that we didn't met before:
+- meshes: this folder contains the 3D models in `dae` format (collada mesh) that we'll use later for our robot's body and wheels. In this lesson it also includes the SolidWorks and Blender models as reference, but it's not needed for the simulation.
+- rviz: pre-configured RViz2 layouts that we can use to display the robot's model and the environment
+- urdf: URDF = Universal Robot Description Format. We'll create the model of our robots in this folder. It already has a file with color codes and names.
+- worlds: we'll store the Gazebo worlds that we use in the simulation. In the next chapter we learn how to create a Gazebo world.
+
+# Creating a Gazebo world
+
+Before we create a new world, let's see how can we open the example `world.sdf`. Let's navigate to the `worlds` folder and run the following command:
+
+```bash
+gz sim world.sdf
+```
+
+> In case you have problem with the default OGRE2 rendering engine you can switch to OGRE:
+> ```bash
+> gz sim world.sdf --render-engine ogre
+> ```
+
+And it should open the example world I created for this package.
+![alt text][image4]
+
+Now let's switch to the empty template:
+```bash
+gz sim empty.sdf
+```
+
+Build a world you like using the resource spawner and in the end save it into the worlds folder with `sdf` extension.
+![alt text][image5]
+
+## Launch Gazebo world from ROS
+
+After we created the new world file, let's see how can we launch Gazebo and load the world using ROS. First, let's create a `launch` folder within the package. Inside this folder let's create a new launch file `world.launch.py`.
+
+```python
+import os
+from ament_index_python.packages import get_package_share_directory
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import  LaunchConfiguration, PathJoinSubstitution, TextSubstitution
 
 
+def generate_launch_description():
+
+    world_arg = DeclareLaunchArgument(
+        'world', default_value='world.sdf',
+        description='Name of the Gazebo world file to load'
+    )
+
+    pkg_bme_gazebo_basics = get_package_share_directory('bme_gazebo_basics')
+    pkg_ros_gz_sim = get_package_share_directory('ros_gz_sim')
+
+    # Add your own gazebo library path here
+    gazebo_models_path = "/home/david/gazebo_models"
+    os.environ["GZ_SIM_RESOURCE_PATH"] += os.pathsep + gazebo_models_path
 
 
+    gazebo_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(pkg_ros_gz_sim, 'launch', 'gz_sim.launch.py'),
+        ),
+        launch_arguments={'gz_args': [PathJoinSubstitution([
+            pkg_bme_gazebo_basics,
+            'worlds',
+            LaunchConfiguration('world')
+        ]),
+        #TextSubstitution(text=' -r -v -v1 --render-engine ogre')],
+        TextSubstitution(text=' -r -v -v1')],
+        'on_exit_shutdown': 'true'}.items()
+    )
 
+    launchDescriptionObject = LaunchDescription()
 
+    launchDescriptionObject.add_action(world_arg)
+    launchDescriptionObject.add_action(gazebo_launch)
 
-URDF:
+    return launchDescriptionObject
+```
+
+This launch file has one argument, the world file's name - you can change the default value to your new world. It also ensures that the offline Gazebo model folder is added to the environmental variable, and finally it launches Gazebo through the `ros_gz_sim` with the right arguments (note that the simulation will start automatically because of the `-r` flag).
+
+> In case you have problem with the default OGRE2 rendering engine you can switch to OGRE as before:
+> ```python
+> TextSubstitution(text=' -r -v -v1 --render-engine ogre')],
+> ```
+
+Let's build the workspace - if this is the first time that you build this package source the workspace - and we can launch our file:
+
+```bash
+ros2 launch bme_gazebo_basics world.launch.py
+```
+
+# URDF
+
+URDF is Universal Robot Description Format, it's an XML format for representing a robot model commonly used in ROS, RViz and Gazebo.
+
+However, we still call it URDF, in practice it also includes the functionalaties of `xacro`, in its full name XML macros. With `xacro` we can define re-usable constants, do basic mathematical calculations and substitute complete blocks of our robots with parametrized macros. It can be useful for example in case of a 6 DoF robot arm where all links and joints are identical with different length, diameter, weight, etc.
+
+A robot description (3D model) in URDF is built up as the tree of links and joints that connects links together. A parent link can have multiple children, but a link can only have a single parent.
+
+In the links we can define the mechanical parameters of the link (weight, inertia), the collision shape for the physical simulation and it's visual properties (e.g. detailed 3D models).
+
+In the joints we define the parent and child links and we tell to the simulation what kind of joint do we have (fixed, rotation or linear).
+
+For more detailed tutorials you can check out the official documentation [here](https://docs.ros.org/en/jazzy/Tutorials/Intermediate/URDF/URDF-Main.html).
+
+## Building our robot 1
+
+First of all let's create our robot's URDF in the `urdf` folder with `mogi_bot.urdf` name. To start from the bare minimum let's add the following xml code to the file.
+
+```xml
+<?xml version='1.0'?>
+
+<robot name="mogi_bot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- STEP 1 - Robot footprint -->
+  <link name="base_footprint"></link>
+
+</robot>
+```
+
+Now we only have the very first link of our robot without any mechanical, collision or visual properties, there is nothing to see yet.
+
+Let's add a fix joint and the next link - `base_link` - that will be the body of our robot. It's a 40x20x10cm brick with 15kg, the inertia matrix is calculated from these parameters.
+![alt text][image6]
+
+It's always very important to set realistic values into the inertia matrix, at least the order of magnitude should be in the right range. If the inertia matrix is set to a very unrealistic value it will cause unwanted effects during the physical simulation.
+
+To quickly calculate the inertia matrix from the mechanical parameters you can use various tools, for example [this online calculator](https://www.omnicalculator.com/physics/mass-moment-of-inertia).
+
+```xml
+  <!-- STEP 2 - Robot body = base_link -->
+  <joint name="base_footprint_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <parent link="base_footprint"/>
+    <child link="base_link" />
+  </joint>
+
+  <link name='base_link'>
+    <pose>0 0 0.1 0 0 0</pose>
+
+    <inertial>
+      <mass value="15.0"/>
+      <origin xyz="0.0 0 0" rpy=" 0 0 0"/>
+      <inertia
+          ixx="0.0625" ixy="0" ixz="0"
+          iyy="0.2125" iyz="0"
+          izz="0.25"
+      />
+    </inertial>
+
+    <collision name='collision'>
+      <origin xyz="0 0 0" rpy=" 0 0 0"/> 
+      <geometry>
+        <box size=".4 .2 .1"/>
+      </geometry>
+    </collision>
+
+    <visual name='base_link_visual'>
+      <origin xyz="0 0 0" rpy=" 0 0 0"/>
+      <geometry>
+        <box size=".4 .2 .1"/>
+      </geometry>
+    </visual>
+  </link>
+```
+
+## View the robot in RViz
+
+Now we have a robot body that we can visualize. ROS provides several powerful tools to visualize various data, we already met `rqt` now we meet `RViz`.
+
+We can start it with the `rviz2` command. Then we can add (1) the `Robot Model` view (2), we browse for our URDF file (3) and we type `base_link` as Fixed Frame (4).
+![alt text][image7]
+
+Although is possible to use RViz like this, it's not the most convinient way. Later, when we add more links and joints we'll have the problem that the we don't have any program running that informs RViz about the right transformation among these links (if the joint isn't fixed).
+
+Instead of this manual usage of RViz, let's move all these tasks into a ROS launch file.
+
+We have to install a few packages first:
+```bash
 sudo apt install ros-jazzy-urdf
 sudo apt install ros-jazzy-urdf-tutorial 
+sudo apt install ros-jazzy-urdf-launch
+```
 
-test:
+Let's try what can we do with the `urdf-tutorial` package:
+```bash
 ros2 launch urdf_tutorial display.launch.py model:=urdf/01-myfirst.urdf
+```
+
+The source of this package is available [here](https://github.com/ros/urdf_tutorial/tree/ros2). This package does exactly what we need, but we cannot build up our tools onto `urdf-tutorial`, it's not suitable, but we can create our own launch file based on this package! Let's create the `check_urdf.launch.py` file in the launch folder with the following content:
+
+```python
+import os
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch_ros.substitutions import FindPackageShare
+
+
+def generate_launch_description():
+    
+    pkg_bme_gazebo_basics = FindPackageShare('bme_gazebo_basics')
+    default_rviz_config_path = PathJoinSubstitution([pkg_bme_gazebo_basics, 'rviz', 'urdf.rviz'])
+
+    # Show joint state publisher GUI for joints
+    gui_arg = DeclareLaunchArgument(name='gui', default_value='true', choices=['true', 'false'],
+                                    description='Flag to enable joint_state_publisher_gui')
+    
+    # RViz config file path
+    rviz_arg = DeclareLaunchArgument(name='rvizconfig', default_value=default_rviz_config_path,
+                                    description='Absolute path to rviz config file')
+    
+
+    # URDF model path within the bme_gazebo_basics package
+    model_arg = DeclareLaunchArgument(
+        'model', default_value='mogi_bot.urdf',
+        description='Name of the URDF description to load'
+    )
+
+    # Use built-in ROS2 URDF launch package with our own arguments
+    urdf = IncludeLaunchDescription(
+        PathJoinSubstitution([FindPackageShare('urdf_launch'), 'launch', 'display.launch.py']),
+        launch_arguments={
+            'urdf_package': 'bme_gazebo_basics',
+            'urdf_package_path': PathJoinSubstitution(['urdf', LaunchConfiguration('model')]),
+            'rviz_config': LaunchConfiguration('rvizconfig'),
+            'jsp_gui': LaunchConfiguration('gui')}.items()
+    )
+
+    launchDescriptionObject = LaunchDescription()
+
+    launchDescriptionObject.add_action(gui_arg)
+    launchDescriptionObject.add_action(rviz_arg)
+    launchDescriptionObject.add_action(model_arg)
+    launchDescriptionObject.add_action(urdf)
+
+    return launchDescriptionObject
+```
+
+From now, in every lesson we'll create this launch file, because it's extremely useful during development. Build the workspace and let's try it:
+```bash
+ros2 launch bme_gazebo_basics check_urdf.launch.py 
+```
+
+![alt text][image8]
+
+## Building our robot 2
+
+## TF Tree
+
+sudo apt install ros-jazzy-rqt-tf-tree 
+ros2 run rqt_tf_tree rqt_tf_tree
+ros2 run rqt_tf_tree rqt_tf_tree --force-discover
+
+## Add some colors
+
+## Load the URDF in Gazebo
+
+
+
+
+
+
+
+
+
 
 sudo apt install ros-jazzy-ros-gz-bridge
 
@@ -163,13 +461,6 @@ Strange error:
 pip3 install catkin_pkg
 
 
-sudo apt install ros-jazzy-urdf-launch
 
 
 
-
-
-TF tree
-sudo apt install ros-jazzy-rqt-tf-tree 
-ros2 run rqt_tf_tree rqt_tf_tree
-ros2 run rqt_tf_tree rqt_tf_tree --force-discover
