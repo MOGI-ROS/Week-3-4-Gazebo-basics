@@ -8,6 +8,11 @@
 [image6]: ./assets/inertia.png "Robot inertia"
 [image7]: ./assets/rviz.png "RViz"
 [image8]: ./assets/rviz-1.png "RViz"
+[image9]: ./assets/rviz-2.png "RViz"
+[image10]: ./assets/rviz-3.png "RViz"
+[image11]: ./assets/tf-tree.png "TF Tree"
+[image12]: ./assets/rviz-4.png "RViz"
+[image13]: ./assets/spawn.png "Spawn robot"
 
 # Week 3-4: Gazebo basics
 
@@ -29,14 +34,14 @@
 5.4. [TF Tree](#tf-tree)  
 5.5. [Add some colors](#add-some-colors)  
 5.6. [Load the URDF in Gazebo](#load-the-urdf-in-gazebo)  
-6. [Gazebo integration](#basics-of-ros2)  
-6.1. [Diff drive plugin](#run-gazebo-examples)  
-6.2. [ROS gz bridge](#run-gazebo-examples)  
-6.3. [Driving around](#run-gazebo-examples)  
-6.4. [Odometry and Trajectory server](#run-gazebo-examples)  
-7. [3D models](#basics-of-ros2)  
-8. [Skid steer](#basics-of-ros2)  
-9. [Mecanum wheel](#basics-of-ros2)  
+6. [Gazebo integration](#gazebo-integration)  
+6.1. [Diff drive plugin](#diff-drive-plugin)  
+6.2. [ROS gz bridge](#ros-gz-bridge)  
+6.3. [Driving around](#driving-around)  
+6.4. [Odometry and Trajectory server](#odometry-and-trajectory-server)  
+7. [3D models](#3d-models)  
+8. [Skid steer](#skid-steer)  
+9. [Mecanum wheel](#mecanum-wheel)  
 
 # What is Gazebo
 Gazebo is a powerful robotics simulation tool that provides a 3D environment for simulating robots, sensors, and objects. It is widely used in the ROS ecosystem for testing and developing robotics algorithms in a realistic virtual environment before deploying them to real hardware.
@@ -300,7 +305,19 @@ Let's add a fix joint and the next link - `base_link` - that will be the body of
 
 It's always very important to set realistic values into the inertia matrix, at least the order of magnitude should be in the right range. If the inertia matrix is set to a very unrealistic value it will cause unwanted effects during the physical simulation.
 
-To quickly calculate the inertia matrix from the mechanical parameters you can use various tools, for example [this online calculator](https://www.omnicalculator.com/physics/mass-moment-of-inertia).
+To quickly calculate the inertia matrix from the mechanical parameters you can use various tools, for example [this online calculator](https://www.omnicalculator.com/physics/mass-moment-of-inertia), or you can write a `xacro macro` for that.
+
+> A `xacro` for calculating the inertia of a box can be the following:
+> ```xml
+> <xacro:macro name="solid_cuboid_inertia" params="m l w h">
+>   <inertia ixx="${(m*(w*w+h*h))/12}" ixy = "0" ixz = "0"
+>            iyy="${(m*(l*l+h*h))/12}" iyz = "0"
+>            izz="${(m*(l*l+w*w))/12}"
+>   />
+> </xacro:macro>
+> ```
+
+We always have to think and verify the values if we use `xacro`, during these lessons I'll always use the numeric values for the better understanding. Let's add the robot body with the above parameters:
 
 ```xml
   <!-- STEP 2 - Robot body = base_link -->
@@ -338,6 +355,8 @@ To quickly calculate the inertia matrix from the mechanical parameters you can u
     </visual>
   </link>
 ```
+
+> Links and joints always have to be inside the <robot> tag of the URDF!
 
 ## View the robot in RViz
 
@@ -412,7 +431,7 @@ def generate_launch_description():
     return launchDescriptionObject
 ```
 
-From now, in every lesson we'll create this launch file, because it's extremely useful during development. Build the workspace and let's try it:
+From now, in every lesson we'll create this launch file, because it's extremely useful during development to visualize our URDF. Build the workspace and let's try it:
 ```bash
 ros2 launch bme_gazebo_basics check_urdf.launch.py 
 ```
@@ -421,22 +440,316 @@ ros2 launch bme_gazebo_basics check_urdf.launch.py
 
 ## Building our robot 2
 
+Let's keep building the differential drive robot by adding the 2 wheels:
+
+```xml
+  <!-- STEP 3 - Wheels -->
+  <joint type="continuous" name="left_wheel_joint">
+    <origin xyz="0 0.15 0" rpy="0 0 0"/>
+    <child link="left_wheel"/>
+    <parent link="base_link"/>
+    <axis xyz="0 1 0" rpy="0 0 0"/>
+    <limit effort="100" velocity="10"/>
+    <dynamics damping="1.0" friction="1.0"/>
+  </joint>
+
+  <link name='left_wheel'>
+    <inertial>
+      <mass value="5.0"/>
+      <origin xyz="0 0 0" rpy="0 1.5707 1.5707"/>
+      <inertia
+          ixx="0.014" ixy="0" ixz="0"
+          iyy="0.014" iyz="0"
+          izz="0.025"
+      />
+    </inertial>
+
+    <collision>
+      <origin xyz="0 0 0" rpy="0 1.5707 1.5707"/> 
+      <geometry>
+        <cylinder radius=".1" length=".05"/>
+      </geometry>
+    </collision>
+
+    <visual name='left_wheel_visual'>
+      <origin xyz="0 0 0" rpy="0 1.5707 1.5707"/>
+      <geometry>
+        <cylinder radius=".1" length=".05"/>
+      </geometry>
+    </visual>
+  </link>
+
+  <joint type="continuous" name="right_wheel_joint">
+    <origin xyz="0 -0.15 0" rpy="0 0 0"/>
+    <child link="right_wheel"/>
+    <parent link="base_link"/>
+    <axis xyz="0 1 0" rpy="0 0 0"/>
+    <limit effort="100" velocity="10"/>
+    <dynamics damping="1.0" friction="1.0"/>
+  </joint>
+
+  <link name='right_wheel'>
+    <inertial>
+      <mass value="5.0"/>
+      <origin xyz="0 0 0" rpy="0 1.5707 1.5707"/>
+      <inertia
+          ixx="0.014" ixy="0" ixz="0"
+          iyy="0.014" iyz="0"
+          izz="0.025"
+      />
+    </inertial>
+
+    <collision>
+      <origin xyz="0 0 0" rpy="0 1.5707 1.5707"/> 
+      <geometry>
+        <cylinder radius=".1" length=".05"/>
+      </geometry>
+    </collision>
+
+    <visual name='right_wheel_visual'>
+      <origin xyz="0 0 0" rpy="0 1.5707 1.5707"/>
+      <geometry>
+        <cylinder radius=".1" length=".05"/>
+      </geometry>
+    </visual>
+  </link>
+```
+
+Rebuild the workspace and let's see it using rviz:
+
+```bash
+ros2 launch bme_gazebo_basics check_urdf.launch.py 
+```
+
+![alt text][image9]
+
+Before we can move forward there is still a problem we have to fix first, the robot needs a caster wheel in the front and another in the back. This time these aren't separate links and joints but we add it within the `base_link`:
+
+```xml
+    <collision name='rear_caster_collision'>
+      <origin xyz="-0.15 0 -0.05" rpy=" 0 0 0"/>
+      <geometry>
+        <sphere radius="0.0499"/>
+      </geometry>
+    </collision>
+
+    <visual name='rear_caster_visual'>
+      <origin xyz="-0.15 0 -0.05" rpy=" 0 0 0"/>
+      <geometry>
+        <sphere radius="0.05"/>
+      </geometry>
+    </visual>
+
+    <collision name='front_caster_collision'>
+      <origin xyz="0.15 0 -0.05" rpy=" 0 0 0"/>
+      <geometry>
+        <sphere radius="0.0499"/>
+      </geometry>
+    </collision>
+
+    <visual name='front_caster_visual'>
+      <origin xyz="0.15 0 -0.05" rpy=" 0 0 0"/>
+      <geometry>
+        <sphere radius="0.05"/>
+      </geometry>
+    </visual>
+```
+
+After rebuild, let's see it in RViz.
+![alt text][image10]
+
 ## TF Tree
 
+It's time to get to know another useful tool of ROS, the `TF Tree`. This tool helps visualizing the transformations between the reference frames of the robot. First we need to install the tool:
+```bash
 sudo apt install ros-jazzy-rqt-tf-tree 
+```
+
+After that, let's view our robot with the previous command in RViz:
+```bash
+ros2 launch bme_gazebo_basics check_urdf.launch.py
+```
+
+and in another terminal let's run TF Tree:
+```bash
 ros2 run rqt_tf_tree rqt_tf_tree
-ros2 run rqt_tf_tree rqt_tf_tree --force-discover
+```
+
+> You might experience an issue during the first start of TF Tree, in this case make sure that this rqt plugin is discovered:
+> ```bash
+> ros2 run rqt_tf_tree rqt_tf_tree --force-discover
+> ```
+
+![alt text][image11]
 
 ## Add some colors
 
+By default everything is rendered in red color in RViz because we were not defining the colors of the links. Let's color the body of our robot orange and the wheels green. To color a link we have to put a `<material>` tag into the `<visual>` tag of each links.
+
+We can use the following tags:
+```xml
+<material name="orange"/>
+<material name="green"/>
+```
+
+By default RViz won't be able to understand these color names though, to define these colors we can include the `materials.xacro` that is already in the package of this lesson. Add the following import to the very beginning of the URDF within the `<robot>` tag:
+```xml
+  <!-- STEP 4 - RViz colors -->
+  <xacro:include filename="$(find bme_gazebo_basics)/urdf/materials.xacro" />
+```
+
+Rebuild the workspace and let's see it in RViz:
+![alt text][image12]
+
 ## Load the URDF in Gazebo
 
+Now we have a robot model that we see in RViz, but RViz is just a visualization tool, even if we can rotate some joints with the `joint_state_publisher_gui` it has nothing to do with the physical simulation. To insert our robot model into the Gazebo simulation environment we have to write a new launch file that spawns the robot through the right services of Gazebo.
+
+Let's create `spawn_robot.launch.py` in our launch folder:
+```python
+import os
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.conditions import IfCondition
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, Command
+from launch_ros.actions import Node
+from ament_index_python.packages import get_package_share_directory
+
+def generate_launch_description():
+
+    pkg_bme_gazebo_basics = get_package_share_directory('bme_gazebo_basics')
+
+    gazebo_models_path, ignore_last_dir = os.path.split(pkg_bme_gazebo_basics)
+    os.environ["GZ_SIM_RESOURCE_PATH"] += os.pathsep + gazebo_models_path
+
+    rviz_launch_arg = DeclareLaunchArgument(
+        'rviz', default_value='true',
+        description='Open RViz.'
+    )
+
+    world_arg = DeclareLaunchArgument(
+        'world', default_value='world.sdf',
+        description='Name of the Gazebo world file to load'
+    )
+
+    model_arg = DeclareLaunchArgument(
+        'model', default_value='mogi_bot.urdf',
+        description='Name of the URDF description to load'
+    )
+
+    # Define the path to your URDF or Xacro file
+    urdf_file_path = PathJoinSubstitution([
+        pkg_bme_gazebo_basics,  # Replace with your package name
+        "urdf",
+        LaunchConfiguration('model')  # Replace with your URDF or Xacro file
+    ])
+
+    world_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(pkg_bme_gazebo_basics, 'launch', 'world.launch.py'),
+        ),
+        launch_arguments={
+        'world': LaunchConfiguration('world'),
+        }.items()
+    )
+
+    # Launch rviz
+    rviz_node = Node(
+        package='rviz2',
+        executable='rviz2',
+        arguments=['-d', os.path.join(pkg_bme_gazebo_basics, 'rviz', 'rviz.rviz')],
+        condition=IfCondition(LaunchConfiguration('rviz')),
+        parameters=[
+            {'use_sim_time': True},
+        ]
+    )
+
+    # Spawn the URDF model using the `/world/<world_name>/create` service
+    spawn_urdf_node = Node(
+        package="ros_gz_sim",
+        executable="create",
+        arguments=[
+            "-name", "my_robot",
+            "-topic", "robot_description",
+            "-x", "0.0", "-y", "0.0", "-z", "0.5", "-Y", "0.0"  # Initial spawn position
+        ],
+        output="screen",
+        parameters=[
+            {'use_sim_time': True},
+        ]
+    )
+
+    robot_state_publisher_node = Node(
+        package='robot_state_publisher',
+        executable='robot_state_publisher',
+        name='robot_state_publisher',
+        output='screen',
+        parameters=[
+            {'robot_description': Command(['xacro', ' ', urdf_file_path]),
+             'use_sim_time': True},
+        ],
+        remappings=[
+            ('/tf', 'tf'),
+            ('/tf_static', 'tf_static')
+        ]
+    )
+
+    joint_state_publisher_gui_node = Node(
+        package='joint_state_publisher_gui',
+        executable='joint_state_publisher_gui',
+    )
+
+    launchDescriptionObject = LaunchDescription()
+
+    launchDescriptionObject.add_action(rviz_launch_arg)
+    launchDescriptionObject.add_action(world_arg)
+    launchDescriptionObject.add_action(model_arg)
+    launchDescriptionObject.add_action(world_launch)
+    launchDescriptionObject.add_action(rviz_node)
+    launchDescriptionObject.add_action(spawn_urdf_node)
+    launchDescriptionObject.add_action(robot_state_publisher_node)
+    launchDescriptionObject.add_action(joint_state_publisher_gui_node)
+
+    return launchDescriptionObject
+```
+
+This launch file will include the `world.launch.py` that we created earlier, so we don't have to start and load the world into Gazebo separately. It will also open RViz with a pre-configured view. We see 3 new nodes that we didn't use (or didn't know that we used) before:
+- `create` node of the `ros_gz_sim` package to spawn the robot from the `robot_description` topic into a specific location within the simulation.
+- `robot_state_publisher` will convert and load the URDF/xacro into the `robot_description` topic it's providing the transformations between the links using static transforms from the URDF and dynamic transforms from real time `joint_states` topic
+- `joint_state_publisher_gui` is a `joint_state_publisher` with the small graphical utility to change joint angles. This node is responsible to update dynamic changes between links through the `joint_states` topic
+
+Although we didn't know before, we've already used the `robot_state_publisher` and `joint_state_publisher_gui` through the `urdf_launch` package that is the basis of our `check_urdf.launch.py`. We can see how these nodes are used in the `description.launch.py` and in the `display.launch.py` files [here](https://github.com/ros/urdf_launch/tree/main/launch).
+
+We have to rebuild the workspace and we can try this new launch file:
+```bash
+ros2 launch bme_gazebo_basics spawn_robot.launch.py 
+```
+
+Right now, nothing publishes odometry for our robot so let's change the fixed frame to the `robot_footprint` in RViz.
+
+![alt text][image13]
+
+We see that doesn't matter how we change the wheel joint angles it has no impact on the physical simulation. We did the first step, the robot is spawned into a Gazebo simulation, but the integration just starts from here.
+
+# Gazebo integration
+
+
+
+## Diff drive plugin
+## ROS gz bridge
+## Driving around
+## Odometry and Trajectory server
 
 
 
 
 
 
+
+7. [3D models](#3d-models)  
+8. [Skid steer](#skid-steer)  
+9. [Mecanum wheel](#mecanum-wheel)  
 
 
 
