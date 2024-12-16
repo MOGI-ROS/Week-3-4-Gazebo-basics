@@ -13,6 +13,10 @@
 [image11]: ./assets/tf-tree.png "TF Tree"
 [image12]: ./assets/rviz-4.png "RViz"
 [image13]: ./assets/spawn.png "Spawn robot"
+[image14]: ./assets/diff-drive.png "Differential drive"
+[image15]: ./assets/diff-drive-1.png "Differential drive"
+[image16]: ./assets/gazebo-5.png "Gazebo robot"
+[image17]: ./assets/gazebo-6.png "Gazebo robot"
 
 # Week 3-4: Gazebo basics
 
@@ -734,16 +738,200 @@ We see that doesn't matter how we change the wheel joint angles it has no impact
 
 # Gazebo integration
 
-
+To finally drive our robot in the physical simulation we have to do 2 things, adding a Gazebo plugin that can move the differential drive robot and bridging messages between ROS and Gazebo. Let's start with the first one:
 
 ## Diff drive plugin
+
+Typical differential drive robots are hoverboards, robot vacuum cleaners and robot lawnmovers.
+
+We'll use [the following Gazebo plugin](https://gazebosim.org/api/sim/8/classgz_1_1sim_1_1systems_1_1DiffDrive.html) to drive our robots. The kinematics of the differential robot is very simple, the radius from the center of curvature is `R`, the rate of rotation is `ω` and the wheel speeds are `Vl` and `Vr`. The distance between the wheels is `l`. 
+
+![alt text][image14]
+
+We can describe the kinematics of the differential drive robot [with the following equations](https://www.cs.columbia.edu/~allen/F17/NOTES/icckinematics.pdf):
+
+![alt text][image15]
+
+There are 3 special cases of the above equations:
+
+1. `Vl = Vr`, in this case `R` is infinite and `ω = 0`, the robot is moving straight.
+2. `Vl = -Vr`, in this case `R = 0` and the center of curvature is between the 2 wheels. The robot rotates in place.
+3. `Vl = 0` or `Vr = 0`, in this case `R = l / 2`, the center of curvature is the standing wheel.
+
+The Gazebo plugin is in one hand responsible for calculating the wheel speeds from the control signal. In the other hand, it also implements inverse kinematics, the robot's odometry is calculated from the integral of the wheels speeds and the wheel distance.
+
+Let's create a `mogi_bot.gazebo` file in the URDF folder:
+```xml
+<?xml version="1.0"?>
+<robot>
+  <gazebo>
+    <plugin
+        filename="gz-sim-diff-drive-system"
+        name="gz::sim::systems::DiffDrive">
+        <!-- Topic for the command input -->
+        <topic>/cmd_vel</topic>
+
+        <!-- Wheel joints -->
+        <left_joint>left_wheel_joint</left_joint>
+        <right_joint>right_wheel_joint</right_joint>
+
+        <!-- Wheel parameters -->
+        <wheel_separation>0.3</wheel_separation>
+        <wheel_radius>0.1</wheel_radius>
+
+        <!-- Control gains and limits (optional) -->
+        <max_velocity>3.0</max_velocity>
+        <max_linear_acceleration>1</max_linear_acceleration>
+        <min_linear_acceleration>-1</min_linear_acceleration>
+        <max_angular_acceleration>2</max_angular_acceleration>
+        <min_angular_acceleration>-2</min_angular_acceleration>
+        <max_linear_velocity>0.5</max_linear_velocity>
+        <min_linear_velocity>-0.5</min_linear_velocity>
+        <max_angular_velocity>1</max_angular_velocity>
+        <min_angular_velocity>-1</min_angular_velocity>
+        
+        <!-- Other parameters (optional) -->
+        <odom_topic>odom</odom_topic>
+        <tf_topic>tf</tf_topic>
+        <frame_id>odom</frame_id>
+        <child_frame_id>base_footprint</child_frame_id>
+        <odom_publish_frequency>30</odom_publish_frequency>
+    </plugin>
+
+    <plugin
+        filename="gz-sim-joint-state-publisher-system"
+        name="gz::sim::systems::JointStatePublisher">
+        <topic>joint_states</topic> <!--from <ros><remapping> -->
+        <joint_name>left_wheel_joint</joint_name>
+        <joint_name>right_wheel_joint</joint_name>
+    </plugin>
+  </gazebo>
+</robot>
+```
+
+The `gz-sim-diff-drive-system` plugin is handling the differential drive kinematics, and we will use another plugin `gz-sim-joint-state-publisher-system` to publish joint states from Gazebo to ROS2.
+
+Let's include this new file in our robot's URDF. In the same way how we included the colors, let's add it to the top of our URDF within the `<robot>` tag.
+
+```xml
+  <!-- STEP 5 - Gazebo plugin -->
+  <xacro:include filename="$(find bme_gazebo_basics)/urdf/mogi_bot.gazebo" />
+```
+
+Rebuild the workspace and let's try it:
+
+```bash
+ros2 launch bme_gazebo_basics spawn_robot.launch.py 
+```
+
+We see that odometry is still not published for RViz, but at least in Gazebo we can already drive our robot with the `teleop` plugin:
+
+![alt text][image16]
+
+We can try to drive the robot from ROS with the `teleop_twist_keyboard` node:
+
+```bash
+ros2 run teleop_twist_keyboard teleop_twist_keyboard 
+```
+
+> If `teleop_twist_keyboard` is not installed yet, you can install it with the following command:
+> ```bash
+> sudo apt install ros-jazzy-teleop-twist-keyboard
+> ```
+
+
+But - just like the odometry - this message is also not forwarded between ROS and Gazebo.
+
 ## ROS gz bridge
+
+First of all remove the `joint_state_publisher` from the `spawn_robot.launch.py` because as soon as we can forward the messages between ROS and Gazebo, Gazebo will handle updating the `joint_state` topic.
+
+After that we add another node the `parameter_bridge` from the `ros_gz_bridge` package.
+
+```python
+    # Node to bridge messages like /cmd_vel and /odom
+    gz_bridge_node = Node(
+        package="ros_gz_bridge",
+        executable="parameter_bridge",
+        arguments=[
+            "/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock",
+            "/cmd_vel@geometry_msgs/msg/Twist@gz.msgs.Twist",
+            "/odom@nav_msgs/msg/Odometry@gz.msgs.Odometry",
+            "/joint_states@sensor_msgs/msg/JointState@gz.msgs.Model",
+            "/tf@tf2_msgs/msg/TFMessage@gz.msgs.Pose_V"
+        ],
+        output="screen",
+        parameters=[
+            {'use_sim_time': True},
+        ]
+    )
+```
+
+> Make sure `ros_gz_bridge` is installed!
+> ```bash
+> sudo apt install ros-jazzy-ros-gz-bridge
+> ```
+
+You can find the detailed documentation of `ros_gz_bridge` [here](https://github.com/gazebosim/ros_gz/tree/ros2/ros_gz_bridge). It explains the syntax of bridging topics in details also you can see what kind of messages can be bridged.
+
+We forward the following topics:
+- `/clock`: The topic used for tracking simulation time or any custom time source.
+- `/cmd_vel`: We'll control the simulated robot from this ROS topic.
+- `/odom`: Gazebo's diff drive plugin provides this odometry topic for ROS consumers.
+- `/joint_states`: Gazebo's other plugin provides the dynamic transformation of the wheel joints.
+- `/tf`: Gazebo provides the real-time computation of the robot’s pose and the positions of its links, sensors, etc.
+
+
+> We forward the above messages bi-directionally between ROS2 and Gazebo except `/clock`. Clock should be published by Gazebo only if we are using simulated environment, but if another node already publishes to the `/clock` topic the bi-directional bridge won't be created. In the current complexity of the simulation this is not very important, but later this can cause problems. So we have to make sure that `/clock` is forwarded only in the Gazebo &#8594; ROS2 direction, this we can achieve with using the `[` symbol instead of `@` in the arguments.
+
+Don't forget to add the new node to the `LaunchDescription()` object:
+
+```python
+    launchDescriptionObject.add_action(gz_bridge_node)
+```
+
+Then rebuild the workspace.
+
 ## Driving around
+
+Now it's time to launch the simulation:
+```bash
+ros2 launch bme_gazebo_basics spawn_robot.launch.py 
+```
+
+And in another terminal let's start the `teleop_twist_keyboard`:
+
+```bash
+ros2 run teleop_twist_keyboard teleop_twist_keyboard 
+```
+
+![alt text][image17]
+
 ## Odometry and Trajectory server
 
+I created a node that helps visualizing the trajectory of the robot. Clone the following repo into your workspace:
 
+```bash
+git clone https://github.com/MOGI-ROS/mogi_trajectory_server
+```
 
+Rebuild you worksapce and also source the environment since we added a new package (or simply open a new terminal window and .bashrc does the job).
 
+Then add the node to the `spawn_robot.launch.py`:
+
+```python
+    trajectory_node = Node(
+        package='mogi_trajectory_server',
+        executable='mogi_trajectory_server',
+        name='mogi_trajectory_server',
+    )
+```
+
+And also add it to the `LaunchDescription()` object:
+
+```python
+    launchDescriptionObject.add_action(trajectory_node)
+```
 
 
 
@@ -753,19 +941,15 @@ We see that doesn't matter how we change the wheel joint angles it has no impact
 
 
 
-sudo apt install ros-jazzy-ros-gz-bridge
 
-sudo apt install ros-jazzy-teleop-twist-keyboard
 
-GZ examples:
-https://github.com/gazebosim/gz-sim/tree/gz-sim8/examples/worlds
 
 run example:
 gz sim shapes.sdf --render-engine ogre --render-engine-gui-api-backend opengl
 
 GZ references:
 https://gazebosim.org/api/sim/8/namespacegz_1_1sim_1_1systems.html
-https://gazebosim.org/api/sim/8/classgz_1_1sim_1_1systems_1_1DiffDrive.html
+
 https://gazebosim.org/api/sim/8/classgz_1_1sim_1_1systems_1_1MecanumDrive.html
 https://gazebosim.org/api/sim/8/classgz_1_1sim_1_1systems_1_1OdometryPublisher.html
 
