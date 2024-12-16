@@ -71,7 +71,22 @@ def generate_launch_description():
         ]
     )
 
-    # Node to bridge /cmd_vel and /odom
+    robot_state_publisher_node = Node(
+        package='robot_state_publisher',
+        executable='robot_state_publisher',
+        name='robot_state_publisher',
+        output='screen',
+        parameters=[
+            {'robot_description': Command(['xacro', ' ', urdf_file_path]),
+             'use_sim_time': True},
+        ],
+        remappings=[
+            ('/tf', 'tf'),
+            ('/tf_static', 'tf_static')
+        ]
+    )
+
+    # Node to bridge messages like /cmd_vel and /odom
     gz_bridge_node = Node(
         package="ros_gz_bridge",
         executable="parameter_bridge",
@@ -85,21 +100,6 @@ def generate_launch_description():
         output="screen",
         parameters=[
             {'use_sim_time': True},
-        ]
-    )
-
-    robot_state_publisher_node = Node(
-        package='robot_state_publisher',
-        executable='robot_state_publisher',
-        name='robot_state_publisher',
-        output='screen',
-        parameters=[
-            {'robot_description': Command(['xacro', ' ', urdf_file_path]),
-             'use_sim_time': True},
-        ],
-        remappings=[
-            ('/tf', 'tf'),
-            ('/tf_static', 'tf_static')
         ]
     )
 
@@ -117,8 +117,8 @@ def generate_launch_description():
     launchDescriptionObject.add_action(world_launch)
     launchDescriptionObject.add_action(rviz_node)
     launchDescriptionObject.add_action(spawn_urdf_node)
-    launchDescriptionObject.add_action(gz_bridge_node)
     launchDescriptionObject.add_action(robot_state_publisher_node)
+    launchDescriptionObject.add_action(gz_bridge_node)
     launchDescriptionObject.add_action(trajectory_node)
-
+    
     return launchDescriptionObject
