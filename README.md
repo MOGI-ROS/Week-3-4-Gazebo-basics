@@ -17,6 +17,13 @@
 [image15]: ./assets/diff-drive-1.png "Differential drive"
 [image16]: ./assets/gazebo-5.png "Gazebo robot"
 [image17]: ./assets/gazebo-6.png "Gazebo robot"
+[image18]: ./assets/trajectory.png "Trajectory"
+[image19]: ./assets/tf-tree-1.png "TF Tree"
+[image20]: ./assets/rqt-graph.png "rqt_graph"
+[image21]: ./assets/mogi-bot.png "mogi bot"
+[image22]: ./assets/mogi-bot-1.png "mogi bot"
+[image23]: ./assets/mogi-bot-2.png "mogi bot"
+[image24]: ./assets/mogi-bot-3.png "mogi bot"
 
 # Week 3-4: Gazebo basics
 
@@ -907,9 +914,41 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
 ![alt text][image17]
 
+The friction between the wheels and the ground plane can be unrealistic so we can adjust it inside our URDF, let's add the following physical simulation parameters to the end of our URDF before the `</robot>` tag is closed:
+
+```xml
+  <!-- STEP 6 - Gazebo frictions and colors -->
+  <gazebo reference="left_wheel">
+    <mu1>0.2</mu1>
+    <mu2>0.2</mu2>
+    <kp>1000000.0</kp>
+    <kd>100.0</kd>
+    <minDepth>0.0001</minDepth>
+    <maxVel>1.0</maxVel>
+  </gazebo>
+
+  <gazebo reference="right_wheel">
+    <mu1>0.2</mu1>
+    <mu2>0.2</mu2>
+    <kp>1000000.0</kp>
+    <kd>100.0</kd>
+    <minDepth>0.0001</minDepth>
+    <maxVel>1.0</maxVel>
+  </gazebo>
+
+  <gazebo reference="base_link">
+    <mu1>0.000002</mu1>
+    <mu2>0.000002</mu2>
+  </gazebo>
+```
+
 ## Odometry and Trajectory server
 
-I created a node that helps visualizing the trajectory of the robot. Clone the following repo into your workspace:
+If we use the `rqt_tf_tree` tool that we met earlier, we can see an additional transformation between the `robot_footprint` and the `odom` frame:
+
+![alt text][image19]
+
+I created a node that helps visualizing the odometry and the trajectory of the robot. Clone the following repo into your workspace:
 
 ```bash
 git clone https://github.com/MOGI-ROS/mogi_trajectory_server
@@ -933,19 +972,81 @@ And also add it to the `LaunchDescription()` object:
     launchDescriptionObject.add_action(trajectory_node)
 ```
 
+Then launch the simulation:
+```bash
+ros2 launch bme_gazebo_basics spawn_robot.launch.py 
+```
+
+And in another terminal let's start the `teleop_twist_keyboard`:
+
+```bash
+ros2 run teleop_twist_keyboard teleop_twist_keyboard 
+```
+
+And let's see how it looks like in RViz:
+![alt text][image18]
+
+We can also see how the nodes are connected to each other using the tool we previously met, `rqt_graph`:
+
+![alt text][image20]
+
+# 3D models
+
+Let's make our robot visually more appealing with some 3D models. I already created the 3D models that can be found in the `meshes` folder. We can either use `.stl` files or `.dae` collada meshes. I recommend the collada meshes because then we can individually color certain areas of meshes (e.g. the tyre, the hub and spokes in case of the wheel). With `.stl` files we can only assign a single color for the model.
+
+>I've made previously a video about creating robot models and worlds in Blender:
+><a href="https://youtu.be/K5v3cWsks8w"><img width="600" src="./assets/blender.png"></a>
+
+Creating a model consists of the following recomennded steps:
+1. Create your model in SolidWorks or any other CAD program and save it to an `.stl` file.
+![alt text][image21]
+2. Import `.stl` to Blender and export it as `.dea`, add the model to the URDF and always check it with the `check_urdf.launch.py`, usually the scale and the centerpoint of the model isn't right.
+![alt text][image22]
+3. Iteratively rescale and move the model in Blender, always export to the same `.dae` file, when everything is in the right place, color the model in Blender as you wish.
+![alt text][image23]
+
+The collada meshes are already available for this robot, so it's time to replace the box and cylinders in the URDF file:
+
+```xml
+    <visual name='base_link_visual'>
+      <origin xyz="0 0 0" rpy=" 0 0 0"/>
+      <geometry>
+        <mesh filename = "package://bme_gazebo_basics/meshes/mogi_bot.dae"/>
+        <!-- <box size=".4 .2 .1"/> -->
+      </geometry>
+      <!-- <material name="orange"/> -->
+    </visual>
+```
+
+and for both left and right wheels:
+
+```xml
+    <visual name='left_wheel_visual'>
+      <origin xyz="0 0 0" rpy="0 1.5707 1.5707"/>
+      <geometry>
+        <mesh filename = "package://bme_gazebo_basics/meshes/wheel.dae"/>
+        <!-- <cylinder radius=".1" length=".05"/> -->
+      </geometry>
+      <!-- <material name="green"/> -->
+    </visual>
+```
+
+> Note that also `<material>` tag is removed, if we don't remove it Gazebo will still apply a single color on the model!
+
+![alt text][image24]
+
+# Skid steer
 
 
-7. [3D models](#3d-models)  
-8. [Skid steer](#skid-steer)  
-9. [Mecanum wheel](#mecanum-wheel)  
+
+# Mecanum wheel
 
 
 
 
 
 
-run example:
-gz sim shapes.sdf --render-engine ogre --render-engine-gui-api-backend opengl
+
 
 GZ references:
 https://gazebosim.org/api/sim/8/namespacegz_1_1sim_1_1systems.html
@@ -954,8 +1055,7 @@ https://gazebosim.org/api/sim/8/classgz_1_1sim_1_1systems_1_1MecanumDrive.html
 https://gazebosim.org/api/sim/8/classgz_1_1sim_1_1systems_1_1OdometryPublisher.html
 
 
-Strange error:
-pip3 install catkin_pkg
+
 
 
 
