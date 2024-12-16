@@ -41,9 +41,10 @@
     <visual name='base_link_visual'>
       <origin xyz="0 0 0" rpy=" 0 0 0"/>
       <geometry>
-        <box size=".4 .2 .1"/>
+        <mesh filename = "package://bme_gazebo_basics/meshes/mogi_bot.dae"/>
+        <!-- <box size=".4 .2 .1"/> -->
       </geometry>
-      <material name="orange"/>
+      <!-- <material name="orange"/> -->
     </visual>
 
     <collision name='rear_caster_collision'>
@@ -106,9 +107,10 @@
     <visual name='left_wheel_visual'>
       <origin xyz="0 0 0" rpy="0 1.5707 1.5707"/>
       <geometry>
-        <cylinder radius=".1" length=".05"/>
+        <mesh filename = "package://bme_gazebo_basics/meshes/wheel.dae"/>
+        <!-- <cylinder radius=".1" length=".05"/> -->
       </geometry>
-      <material name="green"/>
+      <!-- <material name="green"/> -->
     </visual>
   </link>
 
@@ -142,9 +144,10 @@
     <visual name='right_wheel_visual'>
       <origin xyz="0 0 0" rpy="0 1.5707 1.5707"/>
       <geometry>
-        <cylinder radius=".1" length=".05"/>
+        <mesh filename = "package://bme_gazebo_basics/meshes/wheel.dae"/>
+        <!-- <cylinder radius=".1" length=".05"/> -->
       </geometry>
-      <material name="green"/>
+      <!-- <material name="green"/> -->
     </visual>
   </link>
 
