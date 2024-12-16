@@ -24,6 +24,8 @@
 [image22]: ./assets/mogi-bot-1.png "mogi bot"
 [image23]: ./assets/mogi-bot-2.png "mogi bot"
 [image24]: ./assets/mogi-bot-3.png "mogi bot"
+[image25]: ./assets/skid-steer.png "skid steer"
+[image26]: ./assets/mecanum-wheel.png "mecanum wheel"
 
 # Week 3-4: Gazebo basics
 
@@ -1037,22 +1039,23 @@ and for both left and right wheels:
 
 # Skid steer
 
+ros2 launch bme_gazebo_basics spawn_robot.launch.py model:=mogi_bot_skid_steer.urdf
 
+![alt text][image25]
 
 # Mecanum wheel
 
-
-
-
-
-
-
-
-GZ references:
 https://gazebosim.org/api/sim/8/namespacegz_1_1sim_1_1systems.html
-
 https://gazebosim.org/api/sim/8/classgz_1_1sim_1_1systems_1_1MecanumDrive.html
 https://gazebosim.org/api/sim/8/classgz_1_1sim_1_1systems_1_1OdometryPublisher.html
+
+ros2 launch bme_gazebo_basics spawn_robot.launch.py model:=mogi_bot_mecanum.urdf
+
+![alt text][image26]
+
+
+
+
 
 
 
