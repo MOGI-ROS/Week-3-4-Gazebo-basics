@@ -2,15 +2,16 @@
 
 <robot name="mogi_bot" xmlns:xacro="http://www.ros.org/wiki/xacro">
 
-  <!-- STEP 3 - Gazebo plugin -->
+  <!-- STEP 5 - Gazebo plugin -->
   <xacro:include filename="$(find bme_gazebo_basics)/urdf/mogi_bot.gazebo" />
 
   <!-- STEP 4 - RViz colors -->
   <xacro:include filename="$(find bme_gazebo_basics)/urdf/materials.xacro" />
 
-  <!-- STEP 1 - Robot chassis -->
+  <!-- STEP 1 - Robot footprint -->
   <link name="base_footprint"></link>
 
+  <!-- STEP 2 - Robot body = base_link -->
   <joint name="base_footprint_joint" type="fixed">
     <origin xyz="0 0 0" rpy="0 0 0" />
     <parent link="base_footprint"/>
@@ -41,7 +42,6 @@
       <origin xyz="0 0 0" rpy=" 0 0 0"/>
       <geometry>
         <box size=".4 .2 .1"/>
-        <!-- <mesh filename = "package://bme_gazebo_basics/meshes/mogi_bot.dae"/> -->
       </geometry>
       <material name="orange"/>
     </visual>
@@ -73,10 +73,9 @@
         <sphere radius="0.05"/>
       </geometry>
     </visual>
-
   </link>
 
-  <!-- STEP 2 - Wheels -->
+  <!-- STEP 3 - Wheels -->
   <joint type="continuous" name="left_wheel_joint">
     <origin xyz="0 0.15 0" rpy="0 0 0"/>
     <child link="left_wheel"/>
@@ -108,7 +107,6 @@
       <origin xyz="0 0 0" rpy="0 1.5707 1.5707"/>
       <geometry>
         <cylinder radius=".1" length=".05"/>
-        <!-- <mesh filename = "package://bme_gazebo_basics/meshes/wheel.dae"/> -->
       </geometry>
       <material name="green"/>
     </visual>
@@ -145,13 +143,12 @@
       <origin xyz="0 0 0" rpy="0 1.5707 1.5707"/>
       <geometry>
         <cylinder radius=".1" length=".05"/>
-        <!-- <mesh filename = "package://bme_gazebo_basics/meshes/wheel.dae"/> -->
       </geometry>
       <material name="green"/>
     </visual>
   </link>
 
-  <!-- STEP 4 - Gazebo frictions and colors -->
+  <!-- STEP 6 - Gazebo frictions and colors -->
   <gazebo reference="left_wheel">
     <mu1>0.2</mu1>
     <mu2>0.2</mu2>
@@ -159,7 +156,6 @@
     <kd>100.0</kd>
     <minDepth>0.0001</minDepth>
     <maxVel>1.0</maxVel>
-    <material>Gazebo/Green</material>
   </gazebo>
 
   <gazebo reference="right_wheel">
@@ -169,13 +165,11 @@
     <kd>100.0</kd>
     <minDepth>0.0001</minDepth>
     <maxVel>1.0</maxVel>
-    <material>Gazebo/Green</material>
   </gazebo>
 
   <gazebo reference="base_link">
     <mu1>0.000002</mu1>
     <mu2>0.000002</mu2>
-    <material>Gazebo/Orange</material>
   </gazebo>
 
 </robot>
