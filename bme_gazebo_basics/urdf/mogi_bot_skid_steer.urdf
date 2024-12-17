@@ -2,15 +2,16 @@
 
 <robot name="mogi_bot" xmlns:xacro="http://www.ros.org/wiki/xacro">
 
-  <!-- STEP 3 - Gazebo plugin -->
+  <!-- STEP 5 - Gazebo plugin -->
   <xacro:include filename="$(find bme_gazebo_basics)/urdf/mogi_bot_skid_steer.gazebo" />
 
   <!-- STEP 4 - RViz colors -->
   <xacro:include filename="$(find bme_gazebo_basics)/urdf/materials.xacro" />
 
-  <!-- STEP 1 - Robot chassis -->
+  <!-- STEP 1 - Robot footprint -->
   <link name="base_footprint"></link>
 
+  <!-- STEP 2 - Robot chassis = base_link -->
   <joint name="base_footprint_joint" type="fixed">
     <origin xyz="0 0 0" rpy="0 0 0" />
     <parent link="base_footprint"/>
@@ -48,7 +49,7 @@
 
   </link>
 
-  <!-- STEP 2 - Wheels -->
+  <!-- STEP 3 - Wheels -->
   <joint type="continuous" name="front_left_wheel_joint">
     <origin xyz="0.15 0.15 0" rpy="0 0 0"/>
     <child link="front_left_wheel"/>
@@ -197,7 +198,7 @@
     </visual>
   </link>
 
-  <!-- STEP 4 - Gazebo colors -->
+  <!-- STEP 6 - Gazebo frictions and colors -->
   <gazebo reference="front_left_wheel">
     <mu1>1.5</mu1>
     <mu2>0.7</mu2>

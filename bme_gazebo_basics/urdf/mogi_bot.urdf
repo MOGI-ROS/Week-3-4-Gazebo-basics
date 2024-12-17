@@ -11,7 +11,7 @@
   <!-- STEP 1 - Robot footprint -->
   <link name="base_footprint"></link>
 
-  <!-- STEP 2 - Robot body = base_link -->
+  <!-- STEP 2 - Robot chassis = base_link -->
   <joint name="base_footprint_joint" type="fixed">
     <origin xyz="0 0 0" rpy="0 0 0" />
     <parent link="base_footprint"/>

@@ -333,7 +333,7 @@ To quickly calculate the inertia matrix from the mechanical parameters you can u
 We always have to think and verify the values if we use `xacro`, during these lessons I'll always use the numeric values for the better understanding. Let's add the robot body with the above parameters:
 
 ```xml
-  <!-- STEP 2 - Robot body = base_link -->
+  <!-- STEP 2 - Robot chassis = base_link -->
   <joint name="base_footprint_joint" type="fixed">
     <origin xyz="0 0 0" rpy="0 0 0" />
     <parent link="base_footprint"/>
@@ -810,7 +810,7 @@ Let's create a `mogi_bot.gazebo` file in the URDF folder:
     <plugin
         filename="gz-sim-joint-state-publisher-system"
         name="gz::sim::systems::JointStatePublisher">
-        <topic>joint_states</topic> <!--from <ros><remapping> -->
+        <topic>joint_states</topic>
         <joint_name>left_wheel_joint</joint_name>
         <joint_name>right_wheel_joint</joint_name>
     </plugin>
@@ -1033,23 +1033,683 @@ and for both left and right wheels:
     </visual>
 ```
 
-> Note that also `<material>` tag is removed, if we don't remove it Gazebo will still apply a single color on the model!
+> Note that also `<material>` tag is removed, if we don't remove it, Gazebo will still apply a single color on the model!
 
 ![alt text][image24]
 
 # Skid steer
 
+To simulate a 4 wheeled skid steer drive first we'll have to extend our robot with 2 more wheels and we remove the caster wheels. To drive the robot we can use the same diff drive plugin, as it's described [in its documentation](https://gazebosim.org/api/sim/8/classgz_1_1sim_1_1systems_1_1DiffDrive.html), left and right joint can appear multiple times:
+```xml
+<left_joint>: Name of a joint that controls a left wheel. This element can appear multiple times, and must appear at least once.
+```
+
+Let's create a `mogi_bot_skid_steer.urdf` file first in the `urdf` folder:
+
+```xml
+<?xml version='1.0'?>
+
+<robot name="mogi_bot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- STEP 5 - Gazebo plugin -->
+  <xacro:include filename="$(find bme_gazebo_basics)/urdf/mogi_bot_skid_steer.gazebo" />
+
+  <!-- STEP 4 - RViz colors -->
+  <xacro:include filename="$(find bme_gazebo_basics)/urdf/materials.xacro" />
+
+  <!-- STEP 1 - Robot footprint -->
+  <link name="base_footprint"></link>
+
+  <!-- STEP 2 - Robot chassis = base_link -->
+  <joint name="base_footprint_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <parent link="base_footprint"/>
+    <child link="base_link" />
+  </joint>
+
+  <link name='base_link'>
+    <pose>0 0 0.1 0 0 0</pose>
+
+    <inertial>
+      <mass value="15.0"/>
+      <origin xyz="0.0 0 0" rpy=" 0 0 0"/>
+      <inertia
+          ixx="0.0625" ixy="0" ixz="0"
+          iyy="0.2125" iyz="0"
+          izz="0.25"
+      />
+    </inertial>
+
+    <collision name='collision'>
+      <origin xyz="0 0 0" rpy=" 0 0 0"/> 
+      <geometry>
+        <box size=".4 .2 .1"/>
+      </geometry>
+    </collision>
+
+    <visual name='base_link_visual'>
+      <origin xyz="0 0 0" rpy=" 0 0 0"/>
+      <geometry>
+        <!-- <box size=".4 .2 .1"/> -->
+        <mesh filename = "package://bme_gazebo_basics/meshes/mogi_bot.dae"/>
+      </geometry>
+      <!-- <material name="orange"/> -->
+    </visual>
+
+  </link>
+
+  <!-- STEP 3 - Wheels -->
+  <joint type="continuous" name="front_left_wheel_joint">
+    <origin xyz="0.15 0.15 0" rpy="0 0 0"/>
+    <child link="front_left_wheel"/>
+    <parent link="base_link"/>
+    <axis xyz="0 1 0" rpy="0 0 0"/>
+    <limit effort="100" velocity="10"/>
+    <dynamics damping="1.0" friction="1.0"/>
+  </joint>
+
+  <link name='front_left_wheel'>
+    <inertial>
+      <mass value="5.0"/>
+      <origin xyz="0 0 0" rpy="0 1.5707 1.5707"/>
+      <inertia
+          ixx="0.014" ixy="0" ixz="0"
+          iyy="0.014" iyz="0"
+          izz="0.025"
+      />
+    </inertial>
+
+    <collision>
+      <origin xyz="0 0 0" rpy="0 1.5707 1.5707"/> 
+      <geometry>
+        <cylinder radius=".1" length=".05"/>
+      </geometry>
+    </collision>
+
+    <visual name='front_left_wheel_visual'>
+      <origin xyz="0 0 0" rpy="0 1.5707 1.5707"/>
+      <geometry>
+        <!-- <cylinder radius=".1" length=".05"/> -->
+        <mesh filename = "package://bme_gazebo_basics/meshes/wheel.dae"/>
+      </geometry>
+      <!-- <material name="green"/> -->
+    </visual>
+  </link>
+
+  <joint type="continuous" name="rear_left_wheel_joint">
+    <origin xyz="-0.15 0.15 0" rpy="0 0 0"/>
+    <child link="rear_left_wheel"/>
+    <parent link="base_link"/>
+    <axis xyz="0 1 0" rpy="0 0 0"/>
+    <limit effort="100" velocity="10"/>
+    <dynamics damping="1.0" friction="1.0"/>
+  </joint>
+
+  <link name='rear_left_wheel'>
+    <inertial>
+      <mass value="5.0"/>
+      <origin xyz="0 0 0" rpy="0 1.5707 1.5707"/>
+      <inertia
+          ixx="0.014" ixy="0" ixz="0"
+          iyy="0.014" iyz="0"
+          izz="0.025"
+      />
+    </inertial>
+
+    <collision>
+      <origin xyz="0 0 0" rpy="0 1.5707 1.5707"/> 
+      <geometry>
+        <cylinder radius=".1" length=".05"/>
+      </geometry>
+    </collision>
+
+    <visual name='rear_left_wheel_visual'>
+      <origin xyz="0 0 0" rpy="0 1.5707 1.5707"/>
+      <geometry>
+        <!-- <cylinder radius=".1" length=".05"/> -->
+        <mesh filename = "package://bme_gazebo_basics/meshes/wheel.dae"/>
+      </geometry>
+      <!-- <material name="green"/> -->
+    </visual>
+  </link>
+
+  <joint type="continuous" name="front_right_wheel_joint">
+    <origin xyz="0.15 -0.15 0" rpy="0 0 0"/>
+    <child link="front_right_wheel"/>
+    <parent link="base_link"/>
+    <axis xyz="0 1 0" rpy="0 0 0"/>
+    <limit effort="100" velocity="10"/>
+    <dynamics damping="1.0" friction="1.0"/>
+  </joint>
+
+  <link name='front_right_wheel'>
+    <inertial>
+      <mass value="5.0"/>
+      <origin xyz="0 0 0" rpy="0 1.5707 1.5707"/>
+      <inertia
+          ixx="0.014" ixy="0" ixz="0"
+          iyy="0.014" iyz="0"
+          izz="0.025"
+      />
+    </inertial>
+
+    <collision>
+      <origin xyz="0 0 0" rpy="0 1.5707 1.5707"/> 
+      <geometry>
+        <cylinder radius=".1" length=".05"/>
+      </geometry>
+    </collision>
+
+    <visual name='front_right_wheel_visual'>
+      <origin xyz="0 0 0" rpy="0 1.5707 1.5707"/>
+      <geometry>
+        <!-- <cylinder radius=".1" length=".05"/> -->
+        <mesh filename = "package://bme_gazebo_basics/meshes/wheel.dae"/>
+      </geometry>
+      <!-- <material name="green"/> -->
+    </visual>
+  </link>
+
+  <joint type="continuous" name="rear_right_wheel_joint">
+    <origin xyz="-0.15 -0.15 0" rpy="0 0 0"/>
+    <child link="rear_right_wheel"/>
+    <parent link="base_link"/>
+    <axis xyz="0 1 0" rpy="0 0 0"/>
+    <limit effort="100" velocity="10"/>
+    <dynamics damping="1.0" friction="1.0"/>
+  </joint>
+
+  <link name='rear_right_wheel'>
+    <inertial>
+      <mass value="5.0"/>
+      <origin xyz="0 0 0" rpy="0 1.5707 1.5707"/>
+      <inertia
+          ixx="0.014" ixy="0" ixz="0"
+          iyy="0.014" iyz="0"
+          izz="0.025"
+      />
+    </inertial>
+
+    <collision>
+      <origin xyz="0 0 0" rpy="0 1.5707 1.5707"/> 
+      <geometry>
+        <cylinder radius=".1" length=".05"/>
+      </geometry>
+    </collision>
+
+    <visual name='rear_right_wheel_visual'>
+      <origin xyz="0 0 0" rpy="0 1.5707 1.5707"/>
+      <geometry>
+        <!-- <cylinder radius=".1" length=".05"/> -->
+        <mesh filename = "package://bme_gazebo_basics/meshes/wheel.dae"/>
+      </geometry>
+      <!-- <material name="green"/> -->
+    </visual>
+  </link>
+
+  <!-- STEP 6 - Gazebo frictions and colors -->
+  <gazebo reference="front_left_wheel">
+    <mu1>1.5</mu1>
+    <mu2>0.7</mu2>
+    <kp>200000.0</kp>
+    <kd>5000.0</kd>
+    <minDepth>0.002</minDepth>
+    <maxVel>0.3</maxVel>
+    <fdir1>0 1 0</fdir1>
+    <!-- <material>Gazebo/Green</material> -->
+  </gazebo>
+
+  <gazebo reference="front_right_wheel">
+    <mu1>1.5</mu1>
+    <mu2>0.7</mu2>
+    <kp>200000.0</kp>
+    <kd>5000.0</kd>
+    <minDepth>0.002</minDepth>
+    <maxVel>0.3</maxVel>
+    <fdir1>0 1 0</fdir1>
+    <!-- <material>Gazebo/Green</material> -->
+  </gazebo>
+
+  <gazebo reference="rear_left_wheel">
+    <mu1>1.5</mu1>
+    <mu2>0.7</mu2>
+    <kp>200000.0</kp>
+    <kd>5000.0</kd>
+    <minDepth>0.002</minDepth>
+    <maxVel>0.3</maxVel>
+    <fdir1>0 1 0</fdir1>
+    <!-- <material>Gazebo/Green</material> -->
+  </gazebo>
+
+  <gazebo reference="rear_right_wheel">
+    <mu1>1.5</mu1>
+    <mu2>0.7</mu2>
+    <kp>200000.0</kp>
+    <kd>5000.0</kd>
+    <minDepth>0.002</minDepth>
+    <maxVel>0.3</maxVel>
+    <fdir1>0 1 0</fdir1>
+    <!-- <material>Gazebo/Green</material> -->
+  </gazebo>
+
+  <gazebo reference="base_link">
+    <mu1>0.000002</mu1>
+    <mu2>0.000002</mu2>
+    <!-- <material>Gazebo/Red</material> -->
+  </gazebo>
+
+</robot>
+```
+
+This time we include `mogi_bot_skid_steer.gazebo`, let's create this file too:
+
+```xml
+<?xml version="1.0"?>
+<robot>
+  <gazebo>
+    <plugin
+        filename="gz-sim-diff-drive-system"
+        name="gz::sim::systems::DiffDrive">
+        <!-- Topic for the command input -->
+        <topic>/cmd_vel</topic>
+
+        <!-- Wheel joints -->
+        <left_joint>front_left_wheel_joint</left_joint>
+        <left_joint>rear_left_wheel_joint</left_joint>
+        <right_joint>front_right_wheel_joint</right_joint>
+        <right_joint>rear_right_wheel_joint</right_joint>
+
+        <!-- Wheel parameters -->
+        <wheel_separation>0.3</wheel_separation>
+        <wheel_radius>0.1</wheel_radius> 
+
+        <!-- Control gains and limits (optional) -->
+        <max_velocity>3.0</max_velocity> 
+        <max_linear_acceleration>1</max_linear_acceleration>
+        <min_linear_acceleration>-1</min_linear_acceleration>
+        <max_angular_acceleration>2</max_angular_acceleration>
+        <min_angular_acceleration>-2</min_angular_acceleration>
+        <max_linear_velocity>0.5</max_linear_velocity>
+        <min_linear_velocity>-0.5</min_linear_velocity>
+        <max_angular_velocity>1</max_angular_velocity>
+        <min_angular_velocity>-1</min_angular_velocity>
+        
+        <!-- Other parameters (optional) -->
+        <odom_topic>odom</odom_topic> 
+        <tf_topic>tf</tf_topic>
+        <frame_id>odom</frame_id>
+        <child_frame_id>base_footprint</child_frame_id>
+        <odom_publish_frequency>30</odom_publish_frequency>
+    </plugin>
+
+    <plugin
+        filename="gz-sim-joint-state-publisher-system"
+        name="gz::sim::systems::JointStatePublisher">
+        <topic>joint_states</topic> <!--from <ros><remapping> -->
+        <joint_name>front_left_wheel_joint</joint_name>
+        <joint_name>front_right_wheel_joint</joint_name>
+        <joint_name>rear_left_wheel_joint</joint_name>
+        <joint_name>rear_right_wheel_joint</joint_name>
+    </plugin>
+  </gazebo>
+</robot>
+```
+
+It's almost identical to the previous diff drive setup but this time we define 4 wheels for both plugins.
+
+Rebuild the workspace, and we can launch with the same launch file, just overriding the model argument:
+```bash
 ros2 launch bme_gazebo_basics spawn_robot.launch.py model:=mogi_bot_skid_steer.urdf
+```
 
 ![alt text][image25]
 
 # Mecanum wheel
 
-https://gazebosim.org/api/sim/8/namespacegz_1_1sim_1_1systems.html
-https://gazebosim.org/api/sim/8/classgz_1_1sim_1_1systems_1_1MecanumDrive.html
-https://gazebosim.org/api/sim/8/classgz_1_1sim_1_1systems_1_1OdometryPublisher.html
+Mecanum drive is a holonomic wheeled drive system that allows a vehicle to move in any direction (forward, backward, sideways, diagonally, or rotate) without changing the orientation of the wheels. It is commonly used in robotics, AGVs (Automated Guided Vehicles), and other platforms that require advanced maneuverability. It uses special wheels with rollers mounted at a 45-degree angle to the wheel’s axis.
 
+Gazebo has detailed [documentation for available plugins](https://gazebosim.org/api/sim/8/namespacegz_1_1sim_1_1systems.html), specifically to mecanum drive the documentation of the plugin can be found [here](https://gazebosim.org/api/sim/8/classgz_1_1sim_1_1systems_1_1MecanumDrive.html).
+
+Although, from the documentation it seems that mecanum drive is publishing odometry transformation, but unfortunately this feature is not properly implemented in Gazebo Harmonic as it's mentioned [in this GitHub issue](https://github.com/gazebosim/gz-sim/issues/1619).
+
+To do a workaround until this feature will be properly implemented in the future, we can use another Gazebo plugin, the [odometry publisher](https://gazebosim.org/api/sim/8/classgz_1_1sim_1_1systems_1_1OdometryPublisher.html).
+
+Let's create a new file in the `urdf` folder, `mogi_bot_mecanum.urdf`:
+
+```xml
+<?xml version='1.0'?>
+
+<robot name="mogi_bot" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+
+  <!-- STEP 5 - Gazebo plugin -->
+  <xacro:include filename="$(find bme_gazebo_basics)/urdf/mogi_bot_mecanum.gazebo" />
+
+  <!-- STEP 4 - RViz colors -->
+  <xacro:include filename="$(find bme_gazebo_basics)/urdf/materials.xacro" />
+
+  <!-- STEP 1 - Robot footprint -->
+  <link name="base_footprint"></link>
+
+  <!-- STEP 2 - Robot chassis = base_link -->
+  <joint name="base_footprint_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <parent link="base_footprint"/>
+    <child link="base_link" />
+  </joint>
+
+  <link name='base_link'>
+    <pose>0 0 0.1 0 0 0</pose>
+
+    <inertial>
+      <mass value="15.0"/>
+      <origin xyz="0.0 0 0" rpy=" 0 0 0"/>
+      <inertia
+          ixx="0.0625" ixy="0" ixz="0"
+          iyy="0.2125" iyz="0"
+          izz="0.25"
+      />
+    </inertial>
+
+    <collision>
+      <origin xyz="0 0 0" rpy=" 0 0 0"/> 
+      <geometry>
+        <box size=".4 .2 .1"/>
+      </geometry>
+    </collision>
+
+    <visual name='base_link_visual'>
+      <origin xyz="0 0 0" rpy=" 0 0 0"/>
+      <geometry>
+        <!-- <box size=".4 .2 .1"/> -->
+        <mesh filename = "package://bme_gazebo_basics/meshes/mogi_bot.dae"/>
+      </geometry>
+      <!-- <material name="orange"/> -->
+    </visual>
+
+  </link>
+
+  <!-- STEP 3 - Wheels -->
+  <joint type="continuous" name="front_left_wheel_joint">
+    <origin xyz="0.15 0.15 0" rpy="-1.5707 0 0"/>
+    <child link="front_left_wheel"/>
+    <parent link="base_link"/>
+    <axis xyz="0 0 1" rpy="0 0 0"/>
+    <limit effort="10000" velocity="10"/>
+    <dynamics damping="1.0" friction="1.0"/>
+  </joint>
+
+  <link name='front_left_wheel'>
+    <inertial>
+      <mass value="2.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia
+          ixx="0.145833" ixy="0" ixz="0"
+          iyy="0.145833" iyz="0"
+          izz="0.125"
+      />
+    </inertial>
+
+    <collision>
+      <geometry>
+        <sphere radius=".1"/>
+      </geometry>
+    </collision>
+
+    <visual name='front_left_wheel_visual'>
+      <origin xyz="0 0 0" rpy="1.5707 0 0"/>
+      <geometry>
+        <!-- <sphere radius=".1"/> -->
+        <mesh filename="package://bme_gazebo_basics/meshes/mecanum_wheel_left.STL" scale="0.002 .002 0.002"/>
+      </geometry>
+      <material name="green"/>
+    </visual>
+  </link>
+
+  <joint type="continuous" name="rear_left_wheel_joint">
+    <origin xyz="-0.15 0.15 0" rpy="-1.5707 0 0"/>
+    <child link="rear_left_wheel"/>
+    <parent link="base_link"/>
+    <axis xyz="0 0 1" rpy="0 0 0"/>
+    <limit effort="10000" velocity="10"/>
+    <dynamics damping="1.0" friction="1.0"/>
+  </joint>
+
+  <link name='rear_left_wheel'>
+    <inertial>
+      <mass value="2.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia
+          ixx="0.145833" ixy="0" ixz="0"
+          iyy="0.145833" iyz="0"
+          izz="0.125"
+      />
+    </inertial>
+
+    <collision>
+      <geometry>
+        <sphere radius=".1"/>
+      </geometry>
+    </collision>
+
+    <visual name='rear_left_wheel_visual'>
+      <origin xyz="0 0 0" rpy="1.5707 0 0"/>
+      <geometry>
+        <!-- <sphere radius=".1"/> -->
+        <mesh filename="package://bme_gazebo_basics/meshes/mecanum_wheel_right.STL" scale="0.002 .002 0.002"/>
+      </geometry>
+      <material name="green"/>
+    </visual>
+  </link>
+
+  <joint type="continuous" name="front_right_wheel_joint">
+    <origin xyz="0.15 -0.15 0" rpy="-1.5707 0 0"/>
+    <child link="front_right_wheel"/>
+    <parent link="base_link"/>
+    <axis xyz="0 0 1" rpy="0 0 0"/>
+    <limit effort="10000" velocity="10"/>
+    <dynamics damping="1.0" friction="1.0"/>
+  </joint>
+
+  <link name='front_right_wheel'>
+    <inertial>
+      <mass value="2.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia
+          ixx="0.145833" ixy="0" ixz="0"
+          iyy="0.145833" iyz="0"
+          izz="0.125"
+      />
+    </inertial>
+
+    <collision>
+      <geometry>
+        <sphere radius=".1"/>
+      </geometry>
+    </collision>
+
+    <visual name='front_right_wheel_visual'>
+      <origin xyz="0 0 0" rpy="1.5707 0 0"/>
+      <geometry>
+        <!-- <sphere radius=".1"/> -->
+        <mesh filename="package://bme_gazebo_basics/meshes/mecanum_wheel_right.STL" scale="0.002 .002 0.002"/>
+      </geometry>
+      <material name="green"/>
+    </visual>
+  </link>
+
+  <joint type="continuous" name="rear_right_wheel_joint">
+    <origin xyz="-0.15 -0.15 0" rpy="-1.5707 0 0"/>
+    <child link="rear_right_wheel"/>
+    <parent link="base_link"/>
+    <axis xyz="0 0 1" rpy="0 0 0"/>
+    <limit effort="10000" velocity="10"/>
+    <dynamics damping="1.0" friction="1.0"/>
+  </joint>
+
+  <link name='rear_right_wheel'>
+    <inertial>
+      <mass value="2.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia
+          ixx="0.145833" ixy="0" ixz="0"
+          iyy="0.145833" iyz="0"
+          izz="0.125"
+      />
+    </inertial>
+
+    <collision>
+      <geometry>
+        <sphere radius=".1"/>
+      </geometry>
+    </collision>
+
+    <visual name='rear_right_wheel_visual'>
+      <origin xyz="0 0 0" rpy="1.5707 0 0"/>
+      <geometry>
+        <!-- <sphere radius=".1"/> -->
+        <mesh filename="package://bme_gazebo_basics/meshes/mecanum_wheel_left.STL" scale="0.002 .002 0.002"/>
+      </geometry>
+      <material name="green"/>
+    </visual>
+  </link>
+
+  <!-- STEP 6 - Gazebo frictions and colors -->
+  <gazebo reference='front_left_wheel'>
+    <collision>
+      <surface>
+        <friction>
+          <ode>
+            <mu>1.5</mu>
+            <mu2>0.0</mu2>
+            <fdir1 gz:expressed_in="base_footprint">1 -1 0</fdir1>
+          </ode>
+        </friction>
+      </surface>
+    </collision>
+  </gazebo>
+
+  <gazebo reference='rear_left_wheel'>
+    <collision>
+      <surface>
+        <friction>
+          <ode>
+            <mu>1.5</mu>
+            <mu2>0.0</mu2>
+            <fdir1 gz:expressed_in="base_footprint">1 1 0</fdir1>
+          </ode>
+        </friction>
+      </surface>
+    </collision>
+  </gazebo>
+
+  <gazebo reference='front_right_wheel'>
+    <collision>
+      <surface>
+        <friction>
+          <ode>
+            <mu>1.5</mu>
+            <mu2>0.0</mu2>
+            <fdir1 gz:expressed_in="base_footprint">1 1 0</fdir1>
+          </ode>
+        </friction>
+      </surface>
+    </collision>
+  </gazebo>
+
+  <gazebo reference='rear_right_wheel'>
+    <collision>
+      <surface>
+        <friction>
+          <ode>
+            <mu>1.5</mu>
+            <mu2>0.0</mu2>
+            <fdir1 gz:expressed_in="base_footprint">1 -1 0</fdir1>
+          </ode>
+        </friction>
+      </surface>
+    </collision>
+  </gazebo>
+
+  <gazebo reference="base_link">
+    <mu1>0.000002</mu1>
+    <mu2>0.000002</mu2>
+    <!-- <material>Gazebo/Red</material> -->
+  </gazebo>
+
+</robot>
+```
+
+Note that description of friction is more complicated than before, the following line is needed to properly simulate the 45 degree rollers in the wheels:
+
+```xml
+<fdir1 gz:expressed_in="base_footprint">1 -1 0</fdir1>
+```
+
+Let's create `mogi_bot_mecanum.gazebo` with the additional `odometry publisher` plugin:
+
+```xml
+<?xml version="1.0"?>
+<robot>
+  <gazebo>
+    <plugin
+      filename="gz-sim-mecanum-drive-system"
+      name="gz::sim::systems::MecanumDrive">
+      <!-- Topic for the command input -->
+      <topic>cmd_vel</topic>
+
+      <!-- Wheel joints -->
+      <front_left_joint>front_left_wheel_joint</front_left_joint>
+      <front_right_joint>front_right_wheel_joint</front_right_joint>
+      <back_left_joint>rear_left_wheel_joint</back_left_joint>
+      <back_right_joint>rear_right_wheel_joint</back_right_joint>
+
+      <!-- Wheel parameters -->
+      <wheel_separation>0.3</wheel_separation>
+      <wheelbase>0.3</wheelbase>
+      <wheel_radius>0.1</wheel_radius>
+
+      <!-- Control gains and limits (optional) -->
+      <min_acceleration>-5</min_acceleration>
+      <max_acceleration>5</max_acceleration>
+
+      <!-- Other parameters (optional) -->
+      <odom_topic>odom</odom_topic>
+      <tf_topic>tf</tf_topic>
+      <frame_id>odom</frame_id>
+      <child_frame_id>base_footprint</child_frame_id>
+      <odom_publish_frequency>30</odom_publish_frequency>
+    </plugin>
+
+    <plugin name="gz::sim::systems::OdometryPublisher" filename="gz-sim-odometry-publisher-system">
+      <odom_topic>odom</odom_topic>
+      <odom_frame>odom</odom_frame>
+      <robot_base_frame>base_footprint</robot_base_frame>
+      <publish_tf>true</publish_tf>
+      <tf_topic>tf</tf_topic>
+      <odom_publish_frequency>30</odom_publish_frequency>
+      <xyz_offset>0 0 0</xyz_offset>
+      <rpy_offset>0 0 0</rpy_offset>
+    </plugin>
+
+    <plugin
+        filename="gz-sim-joint-state-publisher-system"
+        name="gz::sim::systems::JointStatePublisher">
+        <topic>joint_states</topic>
+        <joint_name>front_left_wheel_joint</joint_name>
+        <joint_name>front_right_wheel_joint</joint_name>
+        <joint_name>rear_left_wheel_joint</joint_name>
+        <joint_name>rear_right_wheel_joint</joint_name>
+    </plugin>
+  </gazebo>
+</robot>
+```
+
+Rebuild the workspace, and we can launch with the same launch file as before, just overriding the model argument to the mecanum drive model:
+```bash
 ros2 launch bme_gazebo_basics spawn_robot.launch.py model:=mogi_bot_mecanum.urdf
+```
+
+`teleop_twist_keyboard` support the control of holonomic robots, by pressing the `shift` key the robot moves sideways instead of turning in place.
 
 ![alt text][image26]
 
