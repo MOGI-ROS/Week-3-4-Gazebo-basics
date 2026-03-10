@@ -1002,7 +1002,7 @@ Let's make our robot visually more appealing with some 3D models. I already crea
 Creating a model consists of the following recomennded steps:
 1. Create your model in SolidWorks or any other CAD program and save it to an `.stl` file.
 ![alt text][image21]
-2. Import `.stl` to Blender and export it as `.dea`, add the model to the URDF and always check it with the `check_urdf.launch.py`, usually the scale and the centerpoint of the model isn't right.
+2. Import `.stl` to Blender and export it as `.dae`, add the model to the URDF and always check it with the `check_urdf.launch.py`, usually the scale and the centerpoint of the model isn't right.
 ![alt text][image22]
 3. Iteratively rescale and move the model in Blender, always export to the same `.dae` file, when everything is in the right place, color the model in Blender as you wish.
 ![alt text][image23]
