@@ -1370,10 +1370,6 @@ Mecanum drive is a holonomic wheeled drive system that allows a vehicle to move 
 
 Gazebo has detailed [documentation for available plugins](https://gazebosim.org/api/sim/8/namespacegz_1_1sim_1_1systems.html), specifically to mecanum drive the documentation of the plugin can be found [here](https://gazebosim.org/api/sim/8/classgz_1_1sim_1_1systems_1_1MecanumDrive.html).
 
-Although, from the documentation it seems that mecanum drive is publishing odometry transformation, but unfortunately this feature is not properly implemented in Gazebo Harmonic as it's mentioned [in this GitHub issue](https://github.com/gazebosim/gz-sim/issues/1619).
-
-To do a workaround until this feature will be properly implemented in the future, we can use another Gazebo plugin, the [odometry publisher](https://gazebosim.org/api/sim/8/classgz_1_1sim_1_1systems_1_1OdometryPublisher.html).
-
 Let's create a new file in the `urdf` folder, `mogi_bot_mecanum.urdf`:
 
 ```xml
@@ -1678,17 +1674,6 @@ Let's create `mogi_bot_mecanum.gazebo` with the additional `odometry publisher` 
       <frame_id>odom</frame_id>
       <child_frame_id>base_footprint</child_frame_id>
       <odom_publish_frequency>30</odom_publish_frequency>
-    </plugin>
-
-    <plugin name="gz::sim::systems::OdometryPublisher" filename="gz-sim-odometry-publisher-system">
-      <odom_topic>odom</odom_topic>
-      <odom_frame>odom</odom_frame>
-      <robot_base_frame>base_footprint</robot_base_frame>
-      <publish_tf>true</publish_tf>
-      <tf_topic>tf</tf_topic>
-      <odom_publish_frequency>30</odom_publish_frequency>
-      <xyz_offset>0 0 0</xyz_offset>
-      <rpy_offset>0 0 0</rpy_offset>
     </plugin>
 
     <plugin
